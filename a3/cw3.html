@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Making a bar chart with value labels</title>
+		<script type="text/javascript" src="./d3/d3.v3.js"></script>
+		<style type="text/css">
+			h1 {
+		text-align: center;
+		}
+
+		h2 {
+		text-align: left;
+		}	
+		</style>
+	</head>
+	<body>
+	<h1>IN CLASS ASSIGNMENT 3 </h1>
+	<h2> Majeti Srividya <br> 01006208</h2>
+	<p><font size="13" color="red">THIS IS THE OUTPUT OF D3 .</font></p>
+		<script type="text/javascript">
+
+			//Width and height
+			var w = 500;
+			var h = 100;
+			var barPadding = 1;
+			
+			var dataset = [ 5,10,13,19,21,25,22,18,15,13,11,12,15,20,18,17,16,18,23,25 ];
+			
+			//Create SVG element
+			var svg = d3.select("body")
+						.append("svg")
+						.attr("width", w)
+						.attr("height", h);
+
+			svg.selectAll("rect")
+			   .data(dataset)
+			   .enter()
+			   .append("rect")
+			   .attr("x", function(d, i) {
+			   		return i * (w / dataset.length);
+			   })
+			   .attr("y", function(d) {
+			   		return h - (d * 4);
+			   })
+			   .attr("width", w / dataset.length - barPadding)
+			   .attr("height", function(d) {
+			   		return d * 4;
+			   })
+			   .attr("fill", function(d) {
+					return "rgb(0, 0, " + (d * 10) + ")";
+			   });
+
+			svg.selectAll("text")
+			   .data(dataset)
+			   .enter()
+			   .append("text")
+			   .text(function(d) {
+			   		return d;
+			   })
+			   .attr("x", function(d, i) {
+			   		return i * (w / dataset.length) + 5;
+			   })
+			   .attr("y", function(d) {
+			   		return h - (d * 4) + 15;
+			   })
+			   .attr("font-family", "sans-serif")
+			   .attr("font-size", "11px")
+			   .attr("fill", "white");
+
+
+			
+		</script>
+		<p><font size="13" color="red">THIS IS THE OUTPUT OF TABLEAU .</font></p>
+		<p><font size="10" color="black"> This chart gives a basic idea of how the departments have their budget and actual in each quarter.</font></p> 
+		<p><font size="5" color="black">1.Here the red color stands for budget and the blue color stands for actual <br> 2. The facilities and information systems have more difference in their budget and actual than human resources and distribution.</font></p> 
+		
+		<img src="Capture.PNG" height="50%" width="50%"/>
+		
+		<p><font size="10" color="black">This tells the difference between the budget and actual for each department in each quarter .</font></p> 
+		<p><font size="5" color="black">1.Here the red circle stands for budget and the blue circle stands for actual. <br>2. There is much difference in actual and budget in quarter3 when compared to all other quarters</font></p> 
+		
+		<img src="Capture1.PNG" height="50%" width="50%"/>
+	</body>
+</html>

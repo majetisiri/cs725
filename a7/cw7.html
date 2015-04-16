@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+<style>
+
+body {
+  font: 10px sans-serif;
+}
+
+.chart { 
+  background: #fff;
+}
+
+p {
+  font: 12px helvetica;
+}
+
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  stroke-width: 2px;
+  shape-rendering: crispEdges;
+}
+
+button {
+  position: absolute;
+  right: 50px;
+  top: 10px;
+}
+h1 {
+		text-align: center;
+		}
+
+		h2 {
+		text-align: RIGHT;
+		}
+
+span.tab{
+    padding: 0 80px; /* Or desired space*/
+}
+</style>
+<body>
+<h1>IN CLASS ASSIGNMENT 7 </h1>
+	<h2> Majeti Srividya <br> 01006208</h2>
+	
+
+<script src="http://d3js.org/d3.v2.js"></script>
+<p><font size="13" color="red">STREAM GRAPH</font></p>
+<p><font size="5" color="red">(using D3)</font></p>
+
+ <a href="http://bl.ocks.org/WillTurman/4631136"><p><font size="5" color="black">reference:http://bl.ocks.org/WillTurman/4631136</font></p> </a>
+
+<div class="chart">
+</div>
+
+<script>
+
+chart("temp.csv", "orange");
+
+var datearray = [];
+var colorrange = [];
+
+
+function chart(csvpath, color) {
+
+if (color == "blue") {
+  colorrange = ["#045A8D", "#2B8CBE", "#74A9CF", "#A6BDDB", "#D0D1E6", "#F1EEF6"];
+}
+else if (color == "pink") {
+  colorrange = ["#980043", "#DD1C77", "#DF65B0", "#C994C7", "#D4B9DA", "#F1EEF6"];
+}
+else if (color == "orange") {
+  colorrange = ["#B30000", "#E34A33", "#FC8D59", "#FDBB84", "#FDD49E", "#FEF0D9"];
+}
+strokecolor = colorrange[0];
+
+var format = d3.time.format("%m/%d/%Y");
+
+var margin = {top: 20, right: 40, bottom: 30, left: 30};
+var width = document.body.clientWidth - margin.left - margin.right;
+var height = 400 - margin.top - margin.bottom;
+
+var tooltip = d3.select("body")
+    .append("div")
+    .attr("class", "remove")
+    .style("position", "absolute")
+    .style("z-index", "20")
+    .style("visibility", "hidden")
+    .style("top", "30px")
+    .style("left", "55px");
+
+var x = d3.time.scale()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height-10, 0]);
+
+var z = d3.scale.ordinal()
+    .range(colorrange);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom")
+    .ticks(d3.time.weeks);
+
+var yAxis = d3.svg.axis()
+    .scale(y);
+
+var yAxisr = d3.svg.axis()
+    .scale(y);
+
+var stack = d3.layout.stack()
+    .offset("silhouette")
+    .values(function(d) { return d.values; })
+    .x(function(d) { return d.date; })
+    .y(function(d) { return d.value; });
+
+var nest = d3.nest()
+    .key(function(d) { return d.key; });
+
+var area = d3.svg.area()
+    .interpolate("cardinal")
+    .x(function(d) { return x(d.date); })
+    .y0(function(d) { return y(d.y0); })
+    .y1(function(d) { return y(d.y0 + d.y); });
+
+var svg = d3.select(".chart").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var graph = d3.csv(csvpath, function(data) {
+  data.forEach(function(d) {
+	console.log(d);
+    d.date = format.parse(d.date);
+    d.value = +d.value;
+  });
+
+  var layers = stack(nest.entries(data));
+
+  x.domain(d3.extent(data, function(d) { return d.date; }));
+  y.domain([0, d3.max(data, function(d) { return d.y0 + d.y; })]);
+
+  svg.selectAll(".layer")
+      .data(layers)
+    .enter().append("path")
+      .attr("class", "layer")
+      .attr("d", function(d) { return area(d.values); })
+      .style("fill", function(d, i) { return z(i); });
+
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .attr("transform", "translate(" + width + ", 0)")
+      .call(yAxis.orient("right"));
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis.orient("left"));
+
+  svg.selectAll(".layer")
+    .attr("opacity", 1)
+    .on("mouseover", function(d, i) {
+      svg.selectAll(".layer").transition()
+      .duration(250)
+      .attr("opacity", function(d, j) {
+        return j != i ? 0.6 : 1;
+    })})
+
+    .on("mousemove", function(d, i) {
+      mousex = d3.mouse(this);
+      mousex = mousex[0];
+      var invertedx = x.invert(mousex);
+      invertedx = invertedx.getMonth() + invertedx.getDate();
+      var selected = (d.values);
+      for (var k = 0; k < selected.length; k++) {
+        datearray[k] = selected[k].date
+        datearray[k] = datearray[k].getMonth() + datearray[k].getDate();
+      }
+
+      mousedate = datearray.indexOf(invertedx);
+      pro = d.values[mousedate].value;
+
+      d3.select(this)
+      .classed("hover", true)
+      .attr("stroke", strokecolor)
+      .attr("stroke-width", "0.5px"), 
+      tooltip.html( "<p>" + d.key + "<br>" + pro + "</p>" ).style("visibility", "visible");
+      
+    })
+    .on("mouseout", function(d, i) {
+     svg.selectAll(".layer")
+      .transition()
+      .duration(250)
+      .attr("opacity", "1");
+      d3.select(this)
+      .classed("hover", false)
+      .attr("stroke-width", "0px"), tooltip.html( "<p>" + d.key + "<br>" + pro + "</p>" ).style("visibility", "hidden");
+  })
+    
+  var vertical = d3.select(".chart")
+        .append("div")
+        .attr("class", "remove")
+        .style("position", "absolute")
+        .style("z-index", "19")
+        .style("width", "1px")
+        .style("height", "380px")
+        .style("top", "10px")
+        .style("bottom", "30px")
+        .style("left", "0px")
+        .style("background", "#fff");
+
+  d3.select(".chart")
+      .on("mousemove", function(){  
+         mousex = d3.mouse(this);
+         mousex = mousex[0] + 5;
+         vertical.style("left", mousex + "px" )})
+      .on("mouseover", function(){  
+         mousex = d3.mouse(this);
+         mousex = mousex[0] + 5;
+         vertical.style("left", mousex + "px")});
+});
+}
+</script>
+<p><font size="5" color="blue">DESCRIPTION: The graph shows the varying temperature in 6 different places (Norfolk, Richmond, Charlottesville, Washington, Chesapeake and Fairfax) in the month of january .By moving the cursor across the graph we can read the values of temperature. </font></p>
+<p><font size="5" color="black">
+what data:<br>
+<span class="tab"></span>one quantitative value attribute (temperature), <br>
+<span class="tab"></span>one ordered key attribute (month january), <br>
+<span class="tab"></span>one categorical key attribute(place).<br>
+What:<br>
+<span class="tab"></span> Derived One quantitative attribute (for layer ordering)(temperature).<br>
+How:<br>
+<span class="tab"></span>Encode Use derived geometry showing different places(differentiated by using saturation channel) as layers across time (i.e month), layer height encodes temperature.</font></p> 
+<style> /* set the CSS */
+ 
+body { font: 12px Arial;}
+ 
+path { 
+  stroke: steelblue;
+  stroke-width: 2;
+  fill: none;
+}
+ 
+.axis path,
+.axis line {
+	fill: none;
+	stroke: grey;
+	stroke-width: 1;
+	shape-rendering: crispEdges;
+}
+ span.tab{
+    padding: 0 80px; /* Or desired space*/
+}
+</style>
+ 
+<!-- load the d3.js library -->	
+<script src="http://d3js.org/d3.v3.min.js"></script>
+ <p><font size="13" color="red">LINE GRAPH</font></p>
+ <p><font size="5" color="red">(using D3)</font></p> 
+<a href="https://gist.github.com/d3noob/4414436#file-thumbnail-png"><p><font size="5" color="black">reference:https://gist.github.com/d3noob/4414436#file-thumbnail-png</font></p> </a>
+ 
+ <script>
+ 
+// Set the dimensions of the canvas / graph
+var	margin = {top: 30, right: 20, bottom: 30, left: 50},
+	width = 600 - margin.left - margin.right,
+	height = 270 - margin.top - margin.bottom;
+ 
+// Parse the date / time
+var format = d3.time.format("%m/%d/%Y");
+ 
+// Set the ranges
+var	x = d3.time.scale().range([0, width]);
+var	y = d3.scale.linear().range([height, 0]);
+ 
+// Define the axes
+var	xAxis = d3.svg.axis().scale(x)
+	.orient("bottom").ticks(5);
+ 
+var	yAxis = d3.svg.axis().scale(y)
+	.orient("left").ticks(5);
+ 
+// Define the line
+var	valueline = d3.svg.line()
+	.x(function(d) { return x(d.date); })
+	.y(function(d) { return y(d.close); });
+    
+// Adds the svg canvas
+var	svg = d3.select("body")
+	.append("svg")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom)
+	.append("g")
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+ 
+// Get the data
+d3.csv("dollarrate.csv", function(error, data) {
+	data.forEach(function(d) {
+	console.log(d);
+		d.date = format.parse(d.date);
+		d.close = +d.close;
+	});
+ 
+	// Scale the range of the data
+	x.domain(d3.extent(data, function(d) { return d.date; }));
+	y.domain([0, d3.max(data, function(d) { return d.close; })]);
+ 
+	// Add the valueline path.
+	svg.append("path")	
+		.attr("class", "line")
+		.attr("d", valueline(data));
+ 
+	// Add the X Axis
+	svg.append("g")		
+		.attr("class", "x axis")
+		.attr("transform", "translate(0," + height + ")")
+		.call(xAxis);
+ 
+	// Add the Y Axis
+	svg.append("g")		
+		.attr("class", "y axis")
+		.call(yAxis);
+ 
+});
+ 
+</script>
+<p><font size="5" color="blue">DESCRIPTION: The graph shows the change in dollar rate from 1988 to 2013.(when converted from dollar to rupee)</font></p>
+<p><font size="5" color="black">
+what data:<br>
+<span class="tab"></span>one quantitative value attribute(dollar to rupee conversion)<br>
+<span class="tab"></span>one ordered key attribute(years from 1988 to 2013) <br>
+How:<br>
+<span class="tab"></span>Dot chart with connection marks between dots.<br>
+Why:<br>
+<span class="tab"></span> Show trend.<br></font></p> 
+</body>
+
+ <p><font size="13" color="red">BAR GRAPH</font></p>
+ <p><font size="5" color="red">(using TABLEAU)</font></p>
+ <img src="barchart.PNG" height="30%" width="30%"/>
+		
+ <p><font size="5" color="blue">DESCRIPTION: The graph compares the temperature in different places (Norfolk, Richmond, Charlottesville, Washington, Chesapeake and Fairfax) on date 1/8/2013</font></p>
+ <p><font size="5" color="black">
+what data:<br>
+<span class="tab"></span>one quantitative value attribute(temperature)<br>
+<span class="tab"></span>one categorical key attribute(place) <br>
+How:encode<br>
+<span class="tab"></span>Line marks, express value attribute with aligned vertical position(temperature)<br> 
+<span class="tab"></span>separate key attribute with horizontal position(place).<br>
+Why:task<br>
+<span class="tab"></span> Look up and compare values.<br></font></p> 
+</html>
